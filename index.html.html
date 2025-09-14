@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Juego de Ahorcado Educativo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .word {
+      font-size: 2em;
+      letter-spacing: 10px;
+      margin: 20px;
+    }
+    .letters {
+      display: grid;
+      grid-template-columns: repeat(7, auto);
+      gap: 8px;
+      justify-content: center;
+      margin: 20px;
+    }
+    .letters button {
+      padding: 10px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      transition: background-color 0.3s;
+    }
+    .letters button.used {
+      background-color: #ddd;
+      color: #888;
+      cursor: default;
+    }
+    .status {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #555;
+    }
+    .aporte {
+      margin-top: 30px;
+      font-size: 1em;
+      color: #222;
+      background: #e0e0e0;
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .next-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    svg {
+      margin: 20px auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Juego de Ahorcado Educativo</h1>
+
+  <svg width="200" height="250" id="ahorcado">
+    <line x1="20" y1="230" x2="180" y2="230" stroke="black" stroke-width="4"/>
+    <line x1="50" y1="230" x2="50" y2="20" stroke="black" stroke-width="4"/>
+    <line x1="50" y1="20" x2="130" y2="20" stroke="black" stroke-width="4"/>
+    <line x1="130" y1="20" x2="130" y2="50" stroke="black" stroke-width="4"/>
+    <circle cx="130" cy="70" r="20" stroke="black" stroke-width="3" fill="none" id="head" style="display:none"/>
+    <line x1="130" y1="90" x2="130" y2="150" stroke="black" stroke-width="3" id="body" style="display:none"/>
+    <line x1="130" y1="100" x2="100" y2="130" stroke="black" stroke-width="3" id="leftArm" style="display:none"/>
+    <line x1="130" y1="100" x2="160" y2="130" stroke="black" stroke-width="3" id="rightArm" style="display:none"/>
+    <line x1="130" y1="150" x2="110" y2="190" stroke="black" stroke-width="3" id="leftLeg" style="display:none"/>
+    <line x1="130" y1="150" x2="150" y2="190" stroke="black" stroke-width="3" id="rightLeg" style="display:none"/>
+  </svg>
+
+  <div class="word" id="wordDisplay">_ _ _ _ _ _</div>
+  <div class="letters" id="letterButtons"></div>
+  <div class="status" id="status"></div>
+  <div class="aporte" id="aporte"></div>
+  <button class="next-btn" id="nextButton" style="display:none">Siguiente autor</button>
+
+  <script>
+    const autores = {
+      PIAGET: "Jean Piaget propuso la teoría del desarrollo cognitivo.",
+      AUSUBEL: "David Ausubel desarrolló el aprendizaje significativo.",
+      MONTESSORI: "Maria Montessori promovió la autonomía y el ambiente preparado.",
+      VIGOTSKY: "Lev Vygotsky introdujo la Zona de Desarrollo Próximo.",
+      SKINNER: "B.F. Skinner fue pionero del conductismo y el refuerzo.",
+      BRUNER: "Jerome Bruner propuso el aprendizaje por descubrimiento.",
+      BANDURA: "Albert Bandura desarrolló la teoría del aprendizaje social.",
+      GARDNER: "Howard Gardner formuló la teoría de las inteligencias múltiples.",
+      FREIRE: "Paulo Freire promovió la pedagogía crítica y el diálogo."
+    };
+
+    let autoresPendientes = [];
+    let palabra = "";
+    let intentos = 6;
+    let letrasAdivinadas = [];
+
+    const wordDisplay = document.getElementById("wordDisplay");
+    const letterButtons = document.getElementById("letterButtons");
+    const status = document.getElementById("status");
+    const aporte = document.getElementById("aporte");
+    const nextButton = document.getElementById("nextButton");
+
+    function iniciarJuego() {
+      if (autoresPendientes.length === 0) {
+        autoresPendientes = Object.keys(autores);
+        nextButton.textContent = "Volver a jugar";
+      } else {
+        nextButton.textContent = "Siguiente autor";
+      }
+
+      const index = Math.floor(Math.random() * autoresPendientes.length);
+      palabra = autoresPendientes.splice(index, 1)[0];
+      intentos = 6;
+      letrasAdivinadas = [];
+      status.textContent = "";
+      aporte.textContent = "";
+      nextButton.style.display = "none";
+      wordDisplay.textContent = "_ ".repeat(palabra.length).trim();
+      letterButtons.innerHTML = "";
+      document.querySelectorAll("svg [id]").forEach(el => el.style.display = "none");
+      crearBotones();
+    }
+
+    function crearBotones() {
+      const letras = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ";
+      letras.split('').forEach(letra => {
+        const btn = document.createElement("button");
+        btn.textContent = letra;
+        btn.onclick = () => adivinarLetra(letra, btn);
+        letterButtons.appendChild(btn);
+      });
+    }
+
+    function adivinarLetra(letra, boton) {
+      boton.disabled = true;
+      boton.classList.add("used");
+
+      if (palabra.includes(letra)) {
+        letrasAdivinadas.push(letra);
+      } else {
+        mostrarParteAhorcado(intentos);
+        intentos--;
+        status.textContent = `Te quedan ${intentos} intento(s).`;
+      }
+
+      if (intentos === 0) {
+        status.textContent = `¡Perdiste! La palabra era "${palabra}". 😢`;
+        letterButtons.innerHTML = "";
+        mostrarAporte();
+        nextButton.style.display = "inline";
+      }
+
+      actualizarPalabra();
+    }
+
+    function actualizarPalabra() {
+      let display = palabra.split('').map(letra =>
+        letrasAdivinadas.includes(letra) ? letra : "_"
+      ).join(' ');
+      wordDisplay.textContent = display;
+
+      if (!display.includes("_")) {
+        status.textContent = "¡Ganaste! 🎉";
+        letterButtons.innerHTML = "";
+        mostrarAporte();
+        nextButton.style.display = "inline";
+      }
+    }
+
+    function mostrarParteAhorcado(errorNum) {
+      const partes = ["head", "body", "leftArm", "rightArm", "leftLeg", "rightLeg"];
+      const parteIndex = 6 - errorNum;
+      if (parteIndex >= 0 && parteIndex < partes.length) {
+        document.getElementById(partes[parteIndex]).style.display = "inline";
+      }
+    }
+
+    function mostrarAporte() {
+      aporte.textContent = autores[palabra];
+    }
+
+    nextButton.onclick = iniciarJuego;
+    iniciarJuego(); // iniciar automáticamente al cargar
+  </script>
+</body>
+</html>
